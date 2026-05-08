@@ -1,5 +1,14 @@
 #!/usr/bin/env ruby
 
-require 'bundler/setup'
-Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
-puts "Hola desde un ejecutable sin extensión"
+# require 'bundler/setup'
+# Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
+# puts "Ejecutando tu programita"
+
+require "net/http"
+require "json"
+require "uri"
+require_relative "../lib/client"
+
+client = Client.new
+messages = [{ role: "user", content: "Hola, ¿como te llamas?" }]
+puts client.chat(messages)
