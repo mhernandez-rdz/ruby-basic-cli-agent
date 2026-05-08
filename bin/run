@@ -15,5 +15,27 @@ tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
 Dir.glob(tools_pattern).each { |file| require file }
 
 client = Client.new
-messages = [{ role: "user", content: "Hola, ¿como te llamas?" }]
-puts client.chat(messages)
+messages = [{ role: "user", content: "Hola, ¿puedes listar el contenido del directorio actual?" }]
+# puts client.chat(messages, tools: Tool.schemas)
+
+loop do
+  message = client.raw_chat(messages, tools: Tool.schemas)
+  messages << message
+
+  if message['tool_calls']
+    message['tool_calls'].each do |tool_call|
+      tool_name = tool_call.dig('function', 'name')
+      args      = JSON.parse(tool_call.dig('function', 'arguments'))
+      result    = Tool.find(tool_name).new.call(args)
+
+      messages << {
+        role: 'tool',
+        tool_call_id: tool_call['id'],
+        content: result.to_s
+      }
+    end
+  else
+    puts message['content']
+    break
+  end
+end

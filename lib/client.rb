@@ -7,11 +7,18 @@ class Client
     @http = build_http
   end
 
-  def chat(messages)
-    request = build_request(messages)
+  def chat(messages, tools: [])
+    request = build_request(messages, tools:)
     response = @http.request(request)
     body = JSON.parse(response.body)
-    body.dig("choices", 0, "message", "content")
+    body.dig("choices", 0, "message", 'content')
+  end
+
+  def raw_chat(messages, tools: [])
+    request = build_request(messages, tools:)
+    response = @http.request(request)
+    body = JSON.parse(response.body)
+    body.dig("choices", 0, "message")
   end
 
   private
@@ -23,12 +30,12 @@ class Client
     http
   end
 
-  def build_request(messages)
+  def build_request(messages, tools: [])
     uri = URI(ENDPOINT)
     req = Net::HTTP::Post.new(uri.path)
     req['Content-Type'] = 'application/json'
     req['Authorization'] = "Bearer #{@api_key}"
-    req.body = JSON.generate({ model: MODEL, messages: })
+    req.body = JSON.generate({ model: MODEL, messages:, tools: })
     req
   end
 end
