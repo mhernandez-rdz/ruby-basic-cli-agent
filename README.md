@@ -1,4 +1,4 @@
-# llm_harnes
+# ruby-basic-cli-agent
 
 A Ruby implementation of the core concepts described in Mihail Eric's article [*The Emperor Has No Clothes: How to Code Claude Code in 200 Lines of Code*](https://www.mihaileric.com/The-Emperor-Has-No-Clothes/).
 
