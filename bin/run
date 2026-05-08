@@ -1,13 +1,18 @@
 #!/usr/bin/env ruby
 
-# require 'bundler/setup'
-# Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
-# puts "Ejecutando tu programita"
+require 'bundler/setup'
+Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
 
 require "net/http"
 require "json"
 require "uri"
+
 require_relative "../lib/client"
+require_relative "../lib/tool"
+
+LIB_PATH = File.expand_path('../lib/', __dir__)
+tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
+Dir.glob(tools_pattern).each { |file| require file }
 
 client = Client.new
 messages = [{ role: "user", content: "Hola, ¿como te llamas?" }]
