@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
+puts "Hola desde un ejecutable sin extensión"
