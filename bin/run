@@ -9,6 +9,7 @@ require "uri"
 
 require_relative "../lib/client"
 require_relative "../lib/tool"
+require_relative "../lib/tool_executor"
 
 LIB_PATH = File.expand_path('../lib/', __dir__)
 tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
@@ -16,7 +17,7 @@ Dir.glob(tools_pattern).each { |file| require file }
 
 client = Client.new
 messages = []
-# puts client.chat(messages, tools: Tool.schemas)
+tool_executor = ToolExecutor.new
 
 loop do
   print "\nYou: "
@@ -30,20 +31,9 @@ loop do
     messages << message
 
     if message['tool_calls']
-      message['tool_calls'].each do |tool_call|
-        tool_name = tool_call.dig('function', 'name')
-        args      = JSON.parse(tool_call.dig('function', 'arguments'))
-        puts "\n[tool: #{tool_name} #{args}]"
-        result    = Tool.find(tool_name).new.call(args)
-
-        messages << {
-          role: 'tool',
-          tool_call_id: tool_call['id'],
-          content: result.to_s
-        }
-      end
+      messages.concat(tool_executor.call(message['tool_calls']))
     else
-      puts "\nAssitant: #{message['content']} "
+      puts "\nAssistant: #{message['content']} "
       break
     end
   end
