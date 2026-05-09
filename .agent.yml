@@ -1,0 +1,5 @@
+permissions:
+  allowed:
+    - "ls"
+    - "git status"
+    - "git diff"

@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
+require_relative 'permissions'
+
 class ToolExecutor
+  def initialize
+    @permissions = Permissions.new
+  end
+
   def call(tool_calls)
     tool_calls.map do |tool_call|
       tool_name = tool_call.dig('function', 'name')
@@ -8,8 +14,7 @@ class ToolExecutor
       begin 
         args = JSON.parse(tool_call.dig('function', 'arguments'))
         puts "\n[tool: #{tool_name} #{args}]"
-        tool = Tool.find(tool_name)
-        result = tool ? tool.new.call(args) : "Tool error: unknown tool '#{tool_name}'"
+        result = handle_tool(tool_name:, args:)
       rescue JSON::ParserError => e
         result = "Error: Invalid arguments JSON: #{e.message}"
       rescue => e
@@ -17,6 +22,20 @@ class ToolExecutor
       end
 
       { role: 'tool', tool_call_id: tool_call['id'], content: result.to_s }
+    end
+  end
+
+  private
+
+  def handle_tool(tool_name:, args:)
+    tool = Tool.find(tool_name)
+    return "Tool error: unknown tool '#{tool_name}'" unless tool
+
+    if tool_name == 'run_command' && !@permissions.allowed?(args['command'])
+      print "\n[permission required] run '#{args['command']}'? [y/N]: "
+      gets&.chomp&.downcase == 'y' ? tool.new.call(args) : "Error: permission denied"
+    else
+      tool.new.call(args)
     end
   end
 end
