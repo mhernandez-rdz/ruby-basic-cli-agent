@@ -15,27 +15,36 @@ tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
 Dir.glob(tools_pattern).each { |file| require file }
 
 client = Client.new
-messages = [{ role: "user", content: "Hola, ¿puedes listar el contenido del directorio actual?" }]
+messages = []
 # puts client.chat(messages, tools: Tool.schemas)
 
 loop do
-  message = client.raw_chat(messages, tools: Tool.schemas)
-  messages << message
+  print "\nYou: "
+  input = gets&.chomp
+  break if input.nil? || input.strip.empty?
 
-  if message['tool_calls']
-    message['tool_calls'].each do |tool_call|
-      tool_name = tool_call.dig('function', 'name')
-      args      = JSON.parse(tool_call.dig('function', 'arguments'))
-      result    = Tool.find(tool_name).new.call(args)
+  messages << { role: 'user', content: input }
 
-      messages << {
-        role: 'tool',
-        tool_call_id: tool_call['id'],
-        content: result.to_s
-      }
+  loop do
+    message = client.raw_chat(messages, tools: Tool.schemas)
+    messages << message
+
+    if message['tool_calls']
+      message['tool_calls'].each do |tool_call|
+        tool_name = tool_call.dig('function', 'name')
+        args      = JSON.parse(tool_call.dig('function', 'arguments'))
+        puts "\n[tool: #{tool_name} #{args}]"
+        result    = Tool.find(tool_name).new.call(args)
+
+        messages << {
+          role: 'tool',
+          tool_call_id: tool_call['id'],
+          content: result.to_s
+        }
+      end
+    else
+      puts "\nAssitant: #{message['content']} "
+      break
     end
-  else
-    puts message['content']
-    break
   end
 end
