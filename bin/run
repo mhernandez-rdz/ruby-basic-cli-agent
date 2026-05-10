@@ -7,6 +7,7 @@ require "net/http"
 require "json"
 require "uri"
 
+require_relative "../lib/utils/config"
 require_relative "../lib/client"
 require_relative "../lib/tool"
 require_relative "../lib/tool_executor"
@@ -16,7 +17,8 @@ tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
 Dir.glob(tools_pattern).each { |file| require file }
 
 client = Client.new
-messages = []
+config = Config.new
+messages = [{ role: 'system', content: config.system_prompt }]
 tool_executor = ToolExecutor.new
 
 loop do
