@@ -1,20 +1,27 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
+
+unless ENV['FIREJAIL_SANDBOX']
+  if system('which firejail > /dev/null 2<&1')
+    exec 'firejail', '--net-keep', "--whitelist=#{Dir.pwd}", '--env=FIREJAIL_SANDBOX=1', $0, *ARGV
+  end
+end
 
 require 'bundler/setup'
 Bundler.require(:default) # Esto carga automáticamente todas las gemas del Gemfile
 
-require "net/http"
-require "json"
-require "uri"
+require 'net/http'
+require 'json'
+require 'uri'
 
-require_relative "../lib/utils/config"
-require_relative "../lib/client"
-require_relative "../lib/tool"
-require_relative "../lib/tool_executor"
+require_relative '../lib/utils/config'
+require_relative '../lib/client'
+require_relative '../lib/tool'
+require_relative '../lib/tool_executor'
 
 LIB_PATH = File.expand_path('../lib/', __dir__)
 tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
-Dir.glob(tools_pattern).each { |file| require file }
+Dir.glob(tools_pattern).sort.each { |file| require file }
 
 client = Client.new
 config = Config.new

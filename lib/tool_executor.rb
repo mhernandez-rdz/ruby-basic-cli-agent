@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require_relative 'permissions'
+require_relative 'path_guard'
 
-class ToolExecutor
+class ToolExecutor # :nodoc:
   def initialize
     @permissions = Permissions.new
+    @path_guard = PathGuard.new
   end
 
   def call(tool_calls)
@@ -31,11 +33,15 @@ class ToolExecutor
     tool = Tool.find(tool_name)
     return "Tool error: unknown tool '#{tool_name}'" unless tool
 
-    if tool_name == 'run_command' && !@permissions.allowed?(args['command'])
-      print "\n[permission required] run '#{args['command']}'? [y/N]: "
-      gets&.chomp&.downcase == 'y' ? tool.new.call(args) : "Error: permission denied"
-    else
-      tool.new.call(args)
+    if tool_name == 'run_command'
+      unless @permissions.allowed?(args['command'])
+        print "\n[permission required] run '#{args['command']}'? [y/N]: "
+        return "Error: permission denied" unless gets&.chomp&.downcase == 'y'
+      end
+    elsif args['path'] && !@path_guard.safe?(args['path'])
+      return "Error path '#{args['path']}' is outside allowed directories"
     end
+
+    tool.new.call(args)
   end
 end

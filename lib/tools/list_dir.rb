@@ -2,7 +2,7 @@
 
 class ListDir < Tool # :nodoc:
   def call(args)
-    Dir.entries(args['path']).join("\n")
+    Dir.entries(args['path']).reject { |e| e.start_with?('.') }.join("\n")
   end
 
   class << self

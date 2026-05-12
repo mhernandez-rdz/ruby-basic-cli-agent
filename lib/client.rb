@@ -1,4 +1,6 @@
-class Client
+# frozen_string_literal: true
+
+class Client # :nodoc:
   MODEL = 'deepseek-v4-flash'
   ENDPOINT = 'https://opencode.ai/zen/go/v1/chat/completions'
 

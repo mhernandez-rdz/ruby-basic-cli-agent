@@ -1,5 +1,6 @@
 permissions:
   allowed:
-    - "ls"
+    - "ls ."
     - "git status"
     - "git diff"
+    - "pwd"

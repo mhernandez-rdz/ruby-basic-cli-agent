@@ -3,6 +3,7 @@
 class WriteFile < Tool # :nodoc:
   def call(args)
     File.write(args['path'], args['content'])
+    "Written #{args['path']} (#{content.length} bytes)"
   end
 
   class << self
