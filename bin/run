@@ -45,5 +45,9 @@ loop do
       puts "\nAssistant: #{message['content']} "
       break
     end
+  rescue StandardError => e
+    puts "\nError: #{e.message}. Please try again."
+    messages.pop
+    break
   end
 end

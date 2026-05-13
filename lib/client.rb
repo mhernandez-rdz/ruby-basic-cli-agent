@@ -20,7 +20,11 @@ class Client # :nodoc:
     request = build_request(messages, tools:)
     response = @http.request(request)
     body = JSON.parse(response.body)
-    body.dig("choices", 0, "message")
+    body.dig("choices", 0, "message") or raise "Unexpected API response: #{body}"
+  rescue Net::OpenTimeout, Net::ReadTimeout
+    raise 'API timeout - check your connection...'
+  rescue Errno::ECONNREFUSED
+    raise 'Could not connect to API'
   end
 
   private
