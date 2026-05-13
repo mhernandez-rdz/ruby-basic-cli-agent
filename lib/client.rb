@@ -33,6 +33,8 @@ class Client # :nodoc:
     uri = URI(ENDPOINT)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
+    http.open_timeout = 10
+    http.read_timeout = 60
     http
   end
 
