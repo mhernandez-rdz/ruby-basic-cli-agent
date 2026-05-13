@@ -58,16 +58,58 @@ class MyTool < Tool
 end
 ```
 
-Built-in tools: `read_file`, `list_dir`, `write_file`.
+Built-in tools: `read_file`, `list_dir`, `write_file`, `edit_file`, `run_command`.
+
+## Security
+
+The agent includes two safety layers configurable via `.agent.yml`:
+
+**Command permissions** — all `run_command` calls require user confirmation unless explicitly allowed. Only exact command matches are permitted:
+
+```yaml
+permissions:
+  allowed:
+    - "git status"
+    - "git diff"
+    - "pwd"
+```
+
+**Path guard** — file tools (`read_file`, `list_dir`, `write_file`, `edit_file`) are restricted to the working directory by default. Additional directories can be whitelisted:
+
+```yaml
+paths:
+  allowed:
+    - "."
+    - "/home/user/Documents/Notes"
+```
+
+**Sandbox** — if `firejail` is installed, the agent automatically runs inside it on startup, restricting filesystem access at the OS level.
+
+## Configuration
+
+The system prompt can be customized by creating `.agent_prompt.txt` in the working directory. If the file exists, it takes priority over the default prompt.
 
 ## Structure
 
 ```
-bin/run          # entry point and main loop
+bin/run               # entry point and main loop
 lib/
-  client.rb      # HTTP client for the LLM API
-  tool.rb        # base class and tool registry
-  tools/         # built-in tool implementations
+  client.rb           # HTTP client for the LLM API
+  tool.rb             # base class and tool registry
+  tool_executor.rb    # tool dispatch, permissions and path guard
+  permissions.rb      # command allowlist
+  path_guard.rb       # filesystem access control
+  tools/              # built-in tool implementations
+  utils/
+    config.rb         # system prompt loader
+test/                 # minitest suite (rake test)
+.agent.yml            # permissions and path configuration
+```
+
+## Running tests
+
+```bash
+rake test
 ```
 
 ## License
