@@ -10,10 +10,7 @@ class Client # :nodoc:
   end
 
   def chat(messages, tools: [])
-    request = build_request(messages, tools:)
-    response = @http.request(request)
-    body = JSON.parse(response.body)
-    body.dig("choices", 0, "message", 'content')
+    raw_chat(messages, tools:)&.dig('content')
   end
 
   def raw_chat(messages, tools: [])

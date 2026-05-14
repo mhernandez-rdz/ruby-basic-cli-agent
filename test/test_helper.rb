@@ -10,6 +10,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 require 'tool'
 require 'permissions'
 require 'path_guard'
+require 'context_manager'
 require 'tools/read_file'
 require 'tools/list_dir'
 require 'tools/write_file'
