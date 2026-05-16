@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
-class Client # :nodoc:
-  MODEL = 'deepseek-v4-flash'
-  ENDPOINT = 'https://opencode.ai/zen/go/v1/chat/completions'
+require_relative 'utils/config'
 
+class Client # :nodoc:
   def initialize
+    @config = Config.read_config
+    raise "Run 'bin/run --setup' first" unless @config['base_url'] && @config['model']
+
     @api_key = ENV['OPENCODE_API_KEY']
+    @uri = URI("#{@config['base_url']}/chat/completions")
     @http = build_http
   end
 
@@ -27,8 +30,7 @@ class Client # :nodoc:
   private
 
   def build_http
-    uri = URI(ENDPOINT)
-    http = Net::HTTP.new(uri.host, uri.port)
+    http = Net::HTTP.new(@uri.host, @uri.port)
     http.use_ssl = true
     http.open_timeout = 10
     http.read_timeout = 60
@@ -36,11 +38,10 @@ class Client # :nodoc:
   end
 
   def build_request(messages, tools: [])
-    uri = URI(ENDPOINT)
-    req = Net::HTTP::Post.new(uri.path)
+    req = Net::HTTP::Post.new(@uri.path)
     req['Content-Type'] = 'application/json'
     req['Authorization'] = "Bearer #{@api_key}"
-    req.body = JSON.generate({ model: MODEL, messages:, tools: })
+    req.body = JSON.generate({ model: @config['model'], messages:, tools: })
     req
   end
 end

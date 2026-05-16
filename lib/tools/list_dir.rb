@@ -1,13 +1,15 @@
 # frozen_string_literal: true
 
 class ListDir < Tool # :nodoc:
+  SKIP_ENTRIES = ['.', '..'].freeze
+
   def call(args)
-    Dir.entries(args['path']).reject { |e| e.start_with?('.') }.join("\n")
+    Dir.entries(args['path']).reject { |e| SKIP_ENTRIES.include?(e) }.join("\n")
   end
 
   class << self
     def tool_name
-      "list_dir"
+      'list_dir'
     end
 
     def schema

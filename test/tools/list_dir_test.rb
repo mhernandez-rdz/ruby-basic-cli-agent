@@ -20,11 +20,15 @@ class ListDirTest < Minitest::Test
     assert_includes result, 'file_b.txt'
   end
 
-  def test_excludes_hidden_files_and_dots
+  def test_excludes_dot_entries
     entries = ListDir.new.call('path' => @dir).split("\n")
-    refute_includes entries, '.hidden'
     refute_includes entries, '.'
     refute_includes entries, '..'
+  end
+
+  def test_includes_hidden_files
+    entries = ListDir.new.call('path' => @dir).split("\n")
+    assert_includes entries, '.hidden'
   end
 
   def test_raises_for_missing_directory

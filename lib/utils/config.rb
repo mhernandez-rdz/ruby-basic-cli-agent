@@ -13,4 +13,14 @@ class Config # :nodoc:
   def system_prompt
     @user_system_prompt || DEFAULT_PROMPT
   end
+
+  class << self
+    def read_config
+      File.exist?('.agent.yml') ? YAML.load_file('.agent.yml') : {}
+    end
+
+    def update_config(content)
+      File.write('.agent.yml', YAML.dump(content))
+    end
+  end
 end
