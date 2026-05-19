@@ -56,7 +56,7 @@ else
         message = client.raw_chat(context.messages, tools: Tool.schemas)
         context.add(message)
 
-        if message['tool_calls']
+        if message['tool_calls']&.any?
           tool_executor.call(message['tool_calls']).each { |msg| context.add(msg) }
         else
           puts "\nAssistant: #{message['content']} "

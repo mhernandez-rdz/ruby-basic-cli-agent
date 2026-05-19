@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'json'
 require 'sqlite3'
 require 'time'
 
@@ -18,25 +19,26 @@ class Memory # :nodoc:
     @db.last_insert_row_id
   end
 
-  def save_message(session_id, role, content)
+  def save_message(session_id, message)
     @db.execute(
-      'INSERT INTO messages (session_id, role, content, created_at) VALUES (?, ?, ?, ?)',
-      [session_id, role, content, Time.now.iso8601]
+      'INSERT INTO messages (session_id, message, created_at) VALUES (?, ?, ?)',
+      [session_id, JSON.generate(message), Time.now.iso8601]
     )
   end
 
   def list_sessions
     @db.execute(<<~SQL)
-      SELECT s.id, s.started_at, m.content
+      SELECT s.id, s.started_at, json_extract(m.message, '$.content') as content
       FROM sessions s
-      LEFT JOIN messages m ON m.session_id = s.id AND m.role = 'user'
+      LEFT JOIN messages m ON m.session_id = s.id AND json_extract(m.message, '$.role') = 'user'
       GROUP BY s.id
       ORDER BY s.started_at DESC
     SQL
   end
 
   def load_messages(session_id)
-    @db.execute('SELECT role, content, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC', session_id.to_i)
+    @db.execute('SELECT message, created_at FROM messages WHERE session_id = ? ORDER BY created_at ASC',
+                session_id.to_i)
   end
 
   private
@@ -53,8 +55,7 @@ class Memory # :nodoc:
       CREATE TABLE IF NOT EXISTS messages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id INTEGER NOT NULL,
-        role TEXT NOT NULL,
-        content TEXT,
+        message TEXT,
         created_at DATETIME NOT NULL,
         FOREIGN KEY (session_id) REFERENCES sessions(id)
       )

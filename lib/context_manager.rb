@@ -17,7 +17,7 @@ class ContextManager # :nodoc:
 
   def add(message, persist: true)
     msg = normalize(message)
-    @memory.save_message(@session_id, msg['role'], msg['content']) if persist && @memory
+    @memory.save_message(@session_id, msg) if persist && @memory
     messages << msg
   end
 

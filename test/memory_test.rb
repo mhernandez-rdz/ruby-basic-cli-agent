@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'sqlite3'
+require 'json'
 require 'memory'
 
 class MemoryTest < Minitest::Test
@@ -12,6 +13,10 @@ class MemoryTest < Minitest::Test
 
   def teardown
     FileUtils.remove_entry(@dir)
+  end
+
+  def parsed_messages(session_id)
+    @memory.load_messages(session_id).map { |m| JSON.parse(m['message']) }
   end
 
   def test_create_session_returns_integer_id
@@ -28,10 +33,10 @@ class MemoryTest < Minitest::Test
 
   def test_save_and_load_messages
     session_id = @memory.create_session
-    @memory.save_message(session_id, 'user', 'hello')
-    @memory.save_message(session_id, 'assistant', 'hi there')
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+    @memory.save_message(session_id, { 'role' => 'assistant', 'content' => 'hi there' })
 
-    messages = @memory.load_messages(session_id)
+    messages = parsed_messages(session_id)
     assert_equal 2, messages.length
     assert_equal 'user', messages[0]['role']
     assert_equal 'hello', messages[0]['content']
@@ -41,28 +46,27 @@ class MemoryTest < Minitest::Test
 
   def test_load_messages_returns_in_insertion_order
     session_id = @memory.create_session
-    @memory.save_message(session_id, 'user', 'first')
-    @memory.save_message(session_id, 'assistant', 'second')
-    @memory.save_message(session_id, 'user', 'third')
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'first' })
+    @memory.save_message(session_id, { 'role' => 'assistant', 'content' => 'second' })
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'third' })
 
-    contents = @memory.load_messages(session_id).map { |m| m['content'] }
+    contents = parsed_messages(session_id).map { |m| m['content'] }
     assert_equal ['first', 'second', 'third'], contents
   end
 
   def test_load_messages_isolates_by_session
     session1 = @memory.create_session
     session2 = @memory.create_session
-    @memory.save_message(session1, 'user', 'session 1')
-    @memory.save_message(session2, 'user', 'session 2')
+    @memory.save_message(session1, { 'role' => 'user', 'content' => 'session 1' })
+    @memory.save_message(session2, { 'role' => 'user', 'content' => 'session 2' })
 
-    messages = @memory.load_messages(session1)
+    messages = parsed_messages(session1)
     assert_equal 1, messages.length
     assert_equal 'session 1', messages[0]['content']
   end
 
   def test_load_messages_returns_empty_for_unknown_session
-    messages = @memory.load_messages(999)
-    assert_empty messages
+    assert_empty @memory.load_messages(999)
   end
 
   def test_list_sessions_returns_all_sessions
@@ -73,8 +77,8 @@ class MemoryTest < Minitest::Test
 
   def test_list_sessions_uses_first_user_message_as_preview
     session_id = @memory.create_session
-    @memory.save_message(session_id, 'assistant', 'ignored')
-    @memory.save_message(session_id, 'user', 'hello world')
+    @memory.save_message(session_id, { 'role' => 'assistant', 'content' => 'ignored' })
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello world' })
 
     sessions = @memory.list_sessions
     assert_equal 'hello world', sessions.first['content']
@@ -86,7 +90,7 @@ class MemoryTest < Minitest::Test
 
   def test_timestamps_are_iso8601
     session_id = @memory.create_session
-    @memory.save_message(session_id, 'user', 'hello')
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
 
     session = @memory.list_sessions.first
     message = @memory.load_messages(session_id).first

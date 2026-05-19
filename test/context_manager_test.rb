@@ -9,8 +9,8 @@ class FakeMemory
     @saved_messages = []
   end
 
-  def save_message(session_id, role, content)
-    @saved_messages << { 'session_id' => session_id, 'role' => role, 'content' => content }
+  def save_message(_session_id, message)
+    @saved_messages << message
   end
 end
 

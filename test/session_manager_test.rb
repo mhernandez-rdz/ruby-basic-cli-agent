@@ -11,7 +11,10 @@ class FakeMemoryForSession
   end
 
   def list_sessions = @sessions
-  def load_messages(_session_id) = @messages
+
+  def load_messages(_session_id)
+    @messages.map { |msg| { 'message' => JSON.generate(msg) } }
+  end
 end
 
 class FakeContextForSession

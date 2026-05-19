@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 module SessionManager # :nodoc:
   class << self
     def sessions_menu(memory) # rubocop:disable Metrics/AbcSize
@@ -23,7 +25,7 @@ module SessionManager # :nodoc:
       end
 
       messages = memory.load_messages(session_id)
-      messages.each { |msg| context.add(msg, persist: false) }
+      messages.each { |msg| context.add(JSON.parse(msg['message']), persist: false) }
     end
   end
 end
