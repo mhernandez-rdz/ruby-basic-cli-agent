@@ -2,5 +2,6 @@
 .idea
 *.log
 tmp/
-storege/*
+storage/memory.db
+storage/*
 .agent.yml
