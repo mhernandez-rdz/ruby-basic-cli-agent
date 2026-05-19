@@ -2,6 +2,18 @@
 
 require_relative 'test_helper'
 
+class FakeMemory
+  attr_reader :saved_messages
+
+  def initialize
+    @saved_messages = []
+  end
+
+  def save_message(session_id, role, content)
+    @saved_messages << { 'session_id' => session_id, 'role' => role, 'content' => content }
+  end
+end
+
 class FakeClient
   attr_reader :chat_called
 
@@ -86,5 +98,34 @@ class ContextManagerTest < Minitest::Test
     @context.add_user_message({ role: 'user', content: 'trigger' })
     assert_equal 'system', @context.messages.first['role']
     assert_equal @system_prompt, @context.messages.first['content']
+  end
+
+  def test_add_persists_message_when_memory_present
+    memory = FakeMemory.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1)
+    context.add({ role: 'assistant', content: 'hello' })
+    assert_equal 1, memory.saved_messages.length
+    assert_equal 'assistant', memory.saved_messages.first['role']
+    assert_equal 'hello', memory.saved_messages.first['content']
+  end
+
+  def test_add_does_not_persist_when_persist_false
+    memory = FakeMemory.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1)
+    context.add({ role: 'assistant', content: 'hello' }, persist: false)
+    assert_empty memory.saved_messages
+  end
+
+  def test_add_user_message_persists_to_memory
+    memory = FakeMemory.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1)
+    context.add_user_message({ role: 'user', content: 'hello' })
+    assert_equal 1, memory.saved_messages.length
+    assert_equal 'user', memory.saved_messages.first['role']
+  end
+
+  def test_add_does_not_raise_when_memory_is_nil
+    context = ContextManager.new(@client, system_prompt: @system_prompt)
+    assert_silent { context.add({ role: 'user', content: 'hello' }) }
   end
 end

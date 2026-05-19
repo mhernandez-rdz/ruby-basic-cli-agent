@@ -8,17 +8,21 @@ class ContextManager # :nodoc:
 
   attr_reader :messages
 
-  def initialize(client, system_prompt:)
+  def initialize(client, system_prompt:, memory: nil, session_id: nil)
+    @memory = memory
+    @session_id = session_id
     @client = client
     @messages = [{ 'role' => 'system', 'content' => system_prompt }]
   end
 
-  def add(message)
-    messages << normalize(message)
+  def add(message, persist: true)
+    msg = normalize(message)
+    @memory.save_message(@session_id, msg['role'], msg['content']) if persist && @memory
+    messages << msg
   end
 
-  def add_user_message(message)
-    messages << normalize(message)
+  def add_user_message(message, persist: true)
+    add(message, persist: persist)
     compact! if needs_compaction?
   end
 

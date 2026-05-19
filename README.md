@@ -89,27 +89,75 @@ paths:
 
 The system prompt can be customized by creating `.agent_prompt.txt` in the working directory. If the file exists, it takes priority over the default prompt.
 
+## Installation
+
+```bash
+gem install bundler
+bundle install
+```
+
+## Setup
+
+Before running the agent for the first time, configure the plan and model:
+
+```bash
+bin/run --setup
+```
+
+This will prompt you to select an OpenCode plan and a model, and save the configuration to `.agent.yml`.
+
+You also need to export your API key:
+
+```bash
+export OPENCODE_API_KEY=your_key_here
+```
+
+## Usage
+
+**Start a new chat session:**
+```bash
+bin/run
+```
+
+**Resume a specific session by ID:**
+```bash
+bin/run --session 42
+```
+
+**List previous sessions and choose one interactively:**
+```bash
+bin/run --session
+```
+
+Type an empty line or press `Ctrl+D` to exit the chat.
+
+## Running tests
+
+```bash
+bundle exec ruby -Ilib -Itest test/<file>_test.rb
+```
+
 ## Structure
 
 ```
 bin/run               # entry point and main loop
 lib/
   client.rb           # HTTP client for the LLM API
+  context_manager.rb  # conversation history and compaction
+  memory.rb           # SQLite persistence for sessions and messages
+  session_manager.rb  # session listing and recovery
+  setup.rb            # first-time configuration wizard
   tool.rb             # base class and tool registry
   tool_executor.rb    # tool dispatch, permissions and path guard
   permissions.rb      # command allowlist
   path_guard.rb       # filesystem access control
   tools/              # built-in tool implementations
   utils/
-    config.rb         # system prompt loader
-test/                 # minitest suite (rake test)
-.agent.yml            # permissions and path configuration
-```
-
-## Running tests
-
-```bash
-rake test
+    config.rb         # system prompt and config loader
+storage/
+  memory.db           # SQLite database (auto-created)
+test/                 # minitest suite
+.agent.yml            # permissions, paths, and model configuration
 ```
 
 ## License
