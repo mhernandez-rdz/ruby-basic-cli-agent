@@ -22,6 +22,7 @@ require_relative '../lib/context_manager'
 require_relative '../lib/setup'
 require_relative '../lib/memory'
 require_relative '../lib/session_manager'
+require_relative '../lib/tagger'
 
 LIB_PATH = File.expand_path('../lib/', __dir__)
 tools_pattern = File.join(LIB_PATH, 'tools', '*.rb')
@@ -33,6 +34,7 @@ else
   begin
     memory = Memory.new
     client = Client.new
+    tagger = Tagger.new(client, memory)
     config = Config.new
     tool_executor = ToolExecutor.new
 
@@ -42,7 +44,8 @@ else
                    next_arg&.match(/^\d+$/) ? next_arg.to_i : SessionManager.sessions_menu(memory)
                  end
     session_id ||= memory.create_session
-    context = ContextManager.new(client, system_prompt: config.system_prompt, memory: memory, session_id: session_id)
+    context = ContextManager.new(client, system_prompt: config.system_prompt, memory: memory, session_id: session_id,
+                                         tagger: tagger)
 
     SessionManager.load_messages(memory, context, session_id) if session_index
     loop do

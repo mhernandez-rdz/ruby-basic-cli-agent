@@ -8,16 +8,20 @@ class ContextManager # :nodoc:
 
   attr_reader :messages
 
-  def initialize(client, system_prompt:, memory: nil, session_id: nil)
+  def initialize(client, system_prompt:, memory: nil, session_id: nil, tagger: nil)
     @memory = memory
     @session_id = session_id
     @client = client
+    @tagger = tagger
     @messages = [{ 'role' => 'system', 'content' => system_prompt }]
   end
 
   def add(message, persist: true)
     msg = normalize(message)
-    @memory.save_message(@session_id, msg) if persist && @memory
+    if persist && @memory
+      msg_id = @memory.save_message(@session_id, msg)
+      @tagger&.tag_async(msg_id, msg['content']) if msg['content'] && !msg['content'].empty?
+    end
     messages << msg
   end
 

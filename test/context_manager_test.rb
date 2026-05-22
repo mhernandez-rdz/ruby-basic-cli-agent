@@ -7,10 +7,24 @@ class FakeMemory
 
   def initialize
     @saved_messages = []
+    @next_id = 1
   end
 
   def save_message(_session_id, message)
     @saved_messages << message
+    @next_id.tap { @next_id += 1 }
+  end
+end
+
+class FakeTagger
+  attr_reader :tagged
+
+  def initialize
+    @tagged = []
+  end
+
+  def tag_async(message_id, content)
+    @tagged << { message_id: message_id, content: content }
   end
 end
 
@@ -127,5 +141,40 @@ class ContextManagerTest < Minitest::Test
   def test_add_does_not_raise_when_memory_is_nil
     context = ContextManager.new(@client, system_prompt: @system_prompt)
     assert_silent { context.add({ role: 'user', content: 'hello' }) }
+  end
+
+  def test_add_calls_tagger_when_present
+    memory = FakeMemory.new
+    tagger = FakeTagger.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1,
+                                          tagger: tagger)
+    context.add({ role: 'user', content: 'hello' })
+    assert_equal 1, tagger.tagged.length
+    assert_equal 'hello', tagger.tagged.first[:content]
+  end
+
+  def test_add_does_not_call_tagger_when_content_is_empty
+    memory = FakeMemory.new
+    tagger = FakeTagger.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1,
+                                          tagger: tagger)
+    context.add({ role: 'user', content: '' })
+    assert_empty tagger.tagged
+  end
+
+  def test_add_does_not_call_tagger_when_content_is_nil
+    memory = FakeMemory.new
+    tagger = FakeTagger.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, memory: memory, session_id: 1,
+                                          tagger: tagger)
+    context.add({ role: 'assistant', content: nil })
+    assert_empty tagger.tagged
+  end
+
+  def test_add_does_not_call_tagger_without_memory
+    tagger = FakeTagger.new
+    context = ContextManager.new(@client, system_prompt: @system_prompt, tagger: tagger)
+    context.add({ role: 'user', content: 'hello' })
+    assert_empty tagger.tagged
   end
 end

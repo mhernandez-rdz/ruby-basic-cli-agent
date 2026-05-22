@@ -98,4 +98,103 @@ class MemoryTest < Minitest::Test
     assert_match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, session['started_at'])
     assert_match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, message['created_at'])
   end
+
+  def test_save_message_returns_id
+    session_id = @memory.create_session
+    id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+    assert_kind_of Integer, id
+    assert id > 0
+  end
+
+  def test_save_tags_creates_tags
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+    @memory.save_tags(msg_id, ['ruby', 'testing'])
+
+    tags = @memory.list_tags.map { |t| t['name'] }
+    assert_includes tags, 'ruby'
+    assert_includes tags, 'testing'
+  end
+
+  def test_save_tags_downcases_names
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+    @memory.save_tags(msg_id, ['Ruby', 'TESTING'])
+
+    tags = @memory.list_tags.map { |t| t['name'] }
+    assert_includes tags, 'ruby'
+    assert_includes tags, 'testing'
+    refute_includes tags, 'Ruby'
+  end
+
+  def test_save_tags_ignores_duplicates
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+    @memory.save_tags(msg_id, ['ruby'])
+    @memory.save_tags(msg_id, ['ruby'])
+
+    assert_equal 1, @memory.list_tags.length
+  end
+
+  def test_find_messages_by_tag_returns_matching_messages
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello ruby' })
+    @memory.save_tags(msg_id, ['ruby'])
+
+    results = @memory.find_messages_by_tag('ruby')
+    assert_equal 1, results.length
+    assert_equal 'hello ruby', results.first['content']
+  end
+
+  def test_find_messages_by_tag_returns_empty_when_no_match
+    assert_empty @memory.find_messages_by_tag('nonexistent')
+  end
+
+  def test_find_messages_by_tag_does_not_return_untagged_messages
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'about ruby' })
+    other_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'about python' })
+    @memory.save_tags(msg_id, ['ruby'])
+    @memory.save_tags(other_id, ['python'])
+
+    results = @memory.find_messages_by_tag('ruby')
+    assert_equal 1, results.length
+    assert_equal 'about ruby', results.first['content']
+  end
+
+  def test_search_messages_by_query
+    session_id = @memory.create_session
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello sqlite' })
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello ruby' })
+
+    results = @memory.search_messages(query: 'sqlite')
+    assert_equal 1, results.length
+    assert_equal 'hello sqlite', results.first[:message]['content']
+  end
+
+  def test_search_messages_by_tag
+    session_id = @memory.create_session
+    msg_id = @memory.save_message(session_id, { 'role' => 'user', 'content' => 'about ruby' })
+    @memory.save_tags(msg_id, ['ruby'])
+
+    results = @memory.search_messages(tags: ['ruby'])
+    assert_equal 1, results.length
+    assert_equal 'about ruby', results.first[:message]['content']
+  end
+
+  def test_search_messages_respects_limit
+    session_id = @memory.create_session
+    5.times { |i| @memory.save_message(session_id, { 'role' => 'user', 'content' => "message #{i}" }) }
+
+    results = @memory.search_messages(query: 'message', limit: 2)
+    assert_equal 2, results.length
+  end
+
+  def test_search_messages_returns_session_id
+    session_id = @memory.create_session
+    @memory.save_message(session_id, { 'role' => 'user', 'content' => 'hello' })
+
+    results = @memory.search_messages(query: 'hello')
+    assert_equal session_id, results.first[:session_id]
+  end
 end
