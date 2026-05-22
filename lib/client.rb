@@ -9,7 +9,6 @@ class Client # :nodoc:
 
     @api_key = ENV['OPENCODE_API_KEY']
     @uri = URI("#{@config['base_url']}/chat/completions")
-    @http = build_http
   end
 
   def chat(messages, tools: [])
@@ -18,7 +17,9 @@ class Client # :nodoc:
 
   def raw_chat(messages, tools: [])
     request = build_request(messages, tools:)
-    response = @http.request(request)
+    response = Net::HTTP.start(@uri.host, @uri.port, use_ssl: true, open_timeout: 10, read_timeout: 60) do |http| 
+      http.request(request)
+    end
     body = JSON.parse(response.body)
     body.dig("choices", 0, "message") or raise "Unexpected API response: #{body}"
   rescue Net::OpenTimeout, Net::ReadTimeout
@@ -28,14 +29,6 @@ class Client # :nodoc:
   end
 
   private
-
-  def build_http
-    http = Net::HTTP.new(@uri.host, @uri.port)
-    http.use_ssl = true
-    http.open_timeout = 10
-    http.read_timeout = 60
-    http
-  end
 
   def build_request(messages, tools: [])
     req = Net::HTTP::Post.new(@uri.path)
