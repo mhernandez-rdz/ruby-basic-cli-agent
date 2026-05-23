@@ -30,6 +30,8 @@ Dir.glob(tools_pattern).sort.each { |file| require file }
 
 if ARGV.include?('--setup')
   Setup.run
+elsif ARGV.include?('--help')
+  puts Config::DEFAULT_HELP_MESSAGE
 else
   begin
     memory = Memory.new
