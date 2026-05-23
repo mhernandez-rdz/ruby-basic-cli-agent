@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'minitest/autorun'
+require 'minitest/reporters'
 require 'tmpdir'
 require 'tempfile'
 require 'fileutils'
@@ -16,3 +17,5 @@ require 'tools/list_dir'
 require 'tools/write_file'
 require 'tools/edit_file'
 require 'tools/run_command'
+
+Minitest::Reporters.use!([Minitest::Reporters::DefaultReporter.new(color: true)])
