@@ -161,6 +161,20 @@ class ClientTest < Minitest::Test
     end
   end
 
+  def test_stream_chat_captures_reasoning_content
+    chunks = [
+      sse({ 'reasoning_content' => 'let me think...' }),
+      sse({ 'content' => 'hello' }),
+      "data: [DONE]\n"
+    ]
+    with_fake_stream(chunks) do
+      client = Client.new
+      result = client.stream_chat([]) { |_| }
+      assert_equal 'let me think...', result['reasoning_content']
+      assert_equal 'hello', result['content']
+    end
+  end
+
   def test_stream_chat_raises_on_timeout
     stub_method(Config, :read_config, -> { FAKE_CONFIG }) do
       stub_method(Net::HTTP, :start, ->(*_args, **_opts) { raise Net::ReadTimeout.new('') }) do
