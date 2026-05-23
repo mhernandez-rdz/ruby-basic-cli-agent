@@ -49,6 +49,11 @@ class Client # :nodoc:
               assembled['content'] += delta['content']
             end
 
+            if delta['reasoning_content']
+              assembled['reasoning_content'] ||= ''
+              assembled['reasoning_content'] += delta['reasoning_content']
+            end
+
             next unless delta['tool_calls']
 
             assembled['tool_calls'] ||= []
