@@ -58,13 +58,17 @@ else
       context.add_user_message({ role: 'user', content: input })
 
       loop do
-        message = client.raw_chat(context.messages, tools: Tool.schemas)
+        print "\nAssistant: "
+        message = client.stream_chat(context.messages, tools: Tool.schemas) do |chunk|
+          print chunk
+          $stdout.flush
+        end
+        puts
         context.add(message)
 
         if message['tool_calls']&.any?
           tool_executor.call(message['tool_calls']).each { |msg| context.add(msg) }
         else
-          puts "\nAssistant: #{message['content']} "
           break
         end
       rescue StandardError => e
