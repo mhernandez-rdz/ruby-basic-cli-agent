@@ -58,7 +58,19 @@ class MyTool < Tool
 end
 ```
 
-Built-in tools: `read_file`, `list_dir`, `write_file`, `edit_file`, `run_command`.
+Built-in tools:
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read the contents of a file |
+| `list_dir` | List files in a directory |
+| `write_file` | Write content to a file |
+| `edit_file` | Edit a specific section of a file |
+| `run_command` | Run a shell command (requires permission) |
+| `grep` | Search file contents with a regex pattern using ripgrep (falls back to grep) |
+| `search_memory` | Search past conversations by keyword or tag |
+| `web_search` | Search the web via SerpAPI (Google) |
+| `web_fetch` | Fetch and extract readable text from a URL; falls back to a headless browser for SPAs |
 
 ## Security
 
@@ -106,10 +118,11 @@ bin/run --setup
 
 This will prompt you to select an OpenCode plan and a model, and save the configuration to `.agent.yml`.
 
-You also need to export your API key:
+You also need to export your API keys:
 
 ```bash
-export OPENCODE_API_KEY=your_key_here
+export OPENCODE_API_KEY=your_key_here   # required
+export SERPAPI_KEY=your_key_here        # required for web_search
 ```
 
 ## Usage
@@ -129,12 +142,18 @@ bin/run --session 42
 bin/run --session
 ```
 
+**Show available options:**
+```bash
+bin/run --help
+```
+
 Type an empty line or press `Ctrl+D` to exit the chat.
 
 ## Running tests
 
 ```bash
-bundle exec ruby -Ilib -Itest test/<file>_test.rb
+rake                                              # full suite
+bundle exec ruby -Ilib -Itest test/<file>_test.rb # single file
 ```
 
 ## Structure
@@ -151,6 +170,7 @@ lib/
   tool_executor.rb    # tool dispatch, permissions and path guard
   permissions.rb      # command allowlist
   path_guard.rb       # filesystem access control
+  tagger.rb           # background LLM-based message tagging
   tools/              # built-in tool implementations
   utils/
     config.rb         # system prompt and config loader
