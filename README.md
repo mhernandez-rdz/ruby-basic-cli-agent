@@ -72,6 +72,24 @@ Built-in tools:
 | `web_search` | Search the web via SerpAPI (Google) |
 | `web_fetch` | Fetch and extract readable text from a URL; falls back to a headless browser for SPAs |
 
+## MCP Servers
+
+The agent supports connecting to external [Model Context Protocol](https://modelcontextprotocol.io) servers. MCP servers expose additional tools over a JSON-RPC 2.0 stdin/stdout interface.
+
+Configure servers in `.agent.yml` under the `mcp_servers` key:
+
+```yaml
+mcp_servers:
+  - name: filesystem
+    command: uvx
+    args: ["mcp-server-filesystem", "/path/to/directory"]
+  - name: my_server
+    command: ruby
+    args: ["/path/to/server.rb"]
+```
+
+Each server's tools are automatically registered with the prefix `servername__toolname` (e.g., `filesystem__read_file`). The agent discovers and calls them the same way as built-in tools.
+
 ## Security
 
 The agent includes two safety layers configurable via `.agent.yml`:
@@ -168,6 +186,8 @@ lib/
   setup.rb            # first-time configuration wizard
   tool.rb             # base class and tool registry
   tool_executor.rb    # tool dispatch, permissions and path guard
+  mcp_client.rb       # JSON-RPC 2.0 client for MCP server subprocesses
+  mcp_server_registry.rb  # connects to configured MCP servers and registers their tools
   permissions.rb      # command allowlist
   path_guard.rb       # filesystem access control
   tagger.rb           # background LLM-based message tagging
