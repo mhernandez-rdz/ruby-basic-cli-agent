@@ -74,9 +74,9 @@ Built-in tools:
 
 ## MCP Servers
 
-The agent supports connecting to external [Model Context Protocol](https://modelcontextprotocol.io) servers. MCP servers expose additional tools over a JSON-RPC 2.0 stdin/stdout interface.
+The agent supports connecting to external [Model Context Protocol](https://modelcontextprotocol.io) servers. MCP servers expose additional tools over JSON-RPC 2.0 and can communicate via two transports:
 
-Configure servers in `.agent.yml` under the `mcp_servers` key:
+**stdio** — the agent spawns the server as a subprocess and communicates over stdin/stdout:
 
 ```yaml
 mcp_servers:
@@ -88,7 +88,28 @@ mcp_servers:
     args: ["/path/to/server.rb"]
 ```
 
-Each server's tools are automatically registered with the prefix `servername__toolname` (e.g., `filesystem__read_file`). The agent discovers and calls them the same way as built-in tools.
+**HTTP+SSE** — the agent connects to a running HTTP server. The server streams responses via Server-Sent Events and receives requests via POST:
+
+```yaml
+mcp_servers:
+  - name: my_app
+    transport: http
+    url: http://localhost:3001/mcp
+    auth_token: "optional-bearer-token"
+```
+
+Each server's tools are automatically registered with the prefix `servername__toolname` (e.g., `my_app__list_tickets`). The agent discovers and calls them the same way as built-in tools.
+
+### Adding MCP support to a Rails app
+
+Add two routes to `config/routes.rb`:
+
+```ruby
+get  '/mcp/sse',     to: 'mcp#sse'
+post '/mcp/message', to: 'mcp#message'
+```
+
+The controller uses `ActionController::Live` to stream SSE responses and a session store to route responses back to the correct connection. See `test/mcp_server.rb` for a minimal stdio server example.
 
 ## Security
 
