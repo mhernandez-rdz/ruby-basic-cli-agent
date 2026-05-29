@@ -6,7 +6,7 @@ class McpServerRegistry # :nodoc:
   def initialize(config)
     @clients = {}
     (config['mcp_servers'] || []).each do |server|
-      client = McpClient.new(server['name'], server['command'], args: server['args'] || [])
+      client = McpClient.build(server)
       @clients[server['name']] = client
       register_tools(server['name'], client)
     end
